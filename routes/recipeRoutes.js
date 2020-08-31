@@ -1,10 +1,10 @@
-module.exports = app => {
-    const recipes = require('../controllers/recipeController.js');
+const recipes = require('../controllers/recipeController.js');
 
+module.exports = app => {
     // Create a new recipe
     app.post('/api/v1/recipes', recipes.create);
 
-    // Returns a list of all recipes
+    // Return all recipes
     app.get('/api/v1/recipes', recipes.findAll);
 
     // Return a single Recipe with recipeId
