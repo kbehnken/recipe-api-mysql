@@ -136,7 +136,8 @@ exports.findRecentRecipes = (req, res) => {
   });
 };
 
-//Return recipe image
+// Return a recipe image
+// TODO Detect file type
 exports.findPhoto = (req, res) => {
   const user_id = req.user.user_id;
   const recipe_id = req.params.recipeId;
@@ -155,7 +156,11 @@ exports.findPhoto = (req, res) => {
           'content-type': 'image/jpeg'
         }
       }
-      res.sendFile(fileName, options);
+      if (fileName) {
+        res.sendFile(fileName, options);
+      } else {
+        res.status(200).send();
+      }
     };
   });
 };
@@ -201,5 +206,17 @@ exports.delete = (req, res) => {
         message: `Recipe was successfully deleted!`
       });
     }
+  });
+};
+
+// Return search results
+exports.findSearchResults = (req, res) => {
+  Recipe.findSearchResults(req.body.search, (err, data) => {
+      if (err)
+          res.status(500).send({
+            message:
+              err.message || 'An error occurred while attempting to search all recipes.'
+          });
+      else res.status(200).send(data);
   });
 };

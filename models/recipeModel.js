@@ -151,4 +151,21 @@ Recipe.remove = (recipe_id, result) => {
   });
 };
 
+Recipe.findSearchResults = (search, result) => {
+  sql.query(`SELECT r.recipe_id, r.recipe_name, r.user_id, Concat(u.first_name, ' ', u.last_name) AS contributor, r.photo_url, r.prep_time, r.cook_time
+  FROM recipes AS r           
+  LEFT JOIN
+    users as u
+    ON r.user_id = u.user_id
+  WHERE r.recipe_name LIKE '%${search}%'`, (err, res) => {
+    if (err) {
+      console.log('error: ', err);
+      result(null, err);
+      return;
+    }
+    console.log('recipes: ', res);
+    result(null, res);
+  });
+};
+
 module.exports = Recipe;

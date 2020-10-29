@@ -26,4 +26,7 @@ module.exports = app => {
 
     // Return a single Recipe with recipeId
     app.get('/api/v1/recipes/photos/:recipeId', recipes.findPhoto);
+
+    // Return search results
+    app.post('/api/v1/search-recipes', recipes.findSearchResults);
 };
