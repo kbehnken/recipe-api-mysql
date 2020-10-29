@@ -41,7 +41,7 @@ exports.findAll = (req, res) => {
                     err.message || 'An error occurred while attempting to retrieve recipes.'
             });
         } else {
-            res.send(data);
+            res.status(200).send(data);
         }
     });
 };
@@ -59,7 +59,7 @@ exports.findOne = (req, res) => {
                     message: `An error occurred while attempting to retrieve user with id ${req.params.userId}.`
                 });
             }
-        } else res.send(data);
+        } else res.status(200).send(data);
     });
 };
   
@@ -100,7 +100,7 @@ exports.delete = (req, res) => {
                 });
         }
         } else {
-            res.send({ 
+            res.status(200).send({ 
                 message: `User was successfully deleted!`
             });
         }
