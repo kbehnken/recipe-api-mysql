@@ -1,10 +1,6 @@
-require('dotenv').config();
-
 const bcrypt = require('bcrypt');
-const jwt = require('jsonwebtoken');
+const signToken = require('../helpers/signToken.js');
 const User = require('../models/userModel.js');
-const accessTokenSecret = process.env.ACCESS_TOKEN_SECRET;
-const maxTokenLifetime = '1h';
 
 exports.login = (req, res) => {
     const { email, password } = req.body;
@@ -15,7 +11,7 @@ exports.login = (req, res) => {
         }
         if (email === data.email && bcrypt.compareSync(password, data.password)) {
             // Generate json web token
-            const accessToken = jwt.sign({ email: data.email, user_id: data.user_id, first_name: data.first_name, last_name: data.last_name, is_admin: data.is_admin }, accessTokenSecret, { expiresIn: maxTokenLifetime });
+            const accessToken = signToken(data);
             res.status(200).send({
                 accessToken
             });
