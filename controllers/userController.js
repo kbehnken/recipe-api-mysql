@@ -1,4 +1,5 @@
 const bcrypt = require('bcrypt');
+const signToken = require('../helpers/signToken.js');
 const User = require('../models/userModel.js');
 
 // Create and save a new user
@@ -82,7 +83,12 @@ exports.update = (req, res) => {
                     message: `An error occurred while attempting to update user with id ${req.params.userId}.`
                 });
             }
-        } else res.send(data);
+        } else {
+            data.user_id = req.params.userId;
+            const accessToken = signToken(data);
+            data.accessToken = accessToken;
+            res.send(data);
+        }
     });
 };
   
@@ -104,5 +110,37 @@ exports.delete = (req, res) => {
                 message: `User was successfully deleted!`
             });
         }
+    });
+};
+
+// Update a user password for the userId specified in the request
+exports.updatePassword = (req, res) => {
+    // Validate Request
+    if (!req.body) {
+        res.status(400).send({
+            message: 'Content cannot be empty!'
+        });
+    }
+    console.log(req.body);
+    const user = new User({
+        first_name: req.user.first_name,
+        last_name: req.user.last_name,
+        email: req.user.email,
+        password: bcrypt.hashSync(req.body.newPassword, 10),
+        is_admin: req.user.is_admin,
+        user_id: req.user.user_id
+    });
+    User.updatePassword(user, (err, data) => {
+        if (err) {
+            if (err.kind === 'not_found') {
+                res.status(404).send({
+                    message: `User with id ${user.user_id} not found.`
+                });
+            } else {
+                res.status(500).send({
+                    message: `An error occurred while attempting change your password.`
+                });
+            }
+        } else res.send(data);
     });
 };

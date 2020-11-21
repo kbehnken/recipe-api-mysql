@@ -8,6 +8,7 @@ const User = function(user) {
     this.password = user.password;
     this.is_admin = user.is_admin;
     this.created_at = new Date();
+    this.user_id = user.user_id;
 };
 
 User.create = (newUser, result) => {
@@ -29,7 +30,6 @@ User.findByEmail = (email, result) => {
             result(err, null);
             return;
         }
-  
         if (res.length) {
             console.log('found user: ', res[0]);
             result(null, res[0]);
@@ -43,15 +43,14 @@ User.findByEmail = (email, result) => {
 User.findById = (user_id, result) => {
     sql.query(`SELECT * FROM users WHERE user_id = ${user_id}`, (err, res) => {
         if (err) {
-        console.log('error: ', err);
-        result(err, null);
-        return;
+            console.log('error: ', err);
+            result(err, null);
+            return;
         }
-
         if (res.length) {
-        console.log('found user: ', res[0]);
-        result(null, res[0]);
-        return;
+            console.log('found user: ', res[0]);
+            result(null, res[0]);
+            return;
         }
         // User ID not found
         result({ kind: 'not_found' }, null);
@@ -65,20 +64,18 @@ User.getAll = result => {
         result(null, err);
         return;
         }
-
         console.log('users: ', res);
         result(null, res);
     });
 };
 
 User.updateById = (user_id, user, result) => {
-    sql.query('UPDATE users SET first_name = ?, last_name = ?, email = ?, password = ? WHERE user_id = ?',[user.first_name, user.last_name, user.email, user.password, user_id], (err, res) => {
+    sql.query('UPDATE users SET first_name = ?, last_name = ?, email = ? WHERE user_id = ?',[user.first_name, user.last_name, user.email, user_id], (err, res) => {
         if (err) {
             console.log('error: ', err);
             result(null, err);
             return;
         }
-
         if (res.affectedRows == 0) {
             // User ID not found
             result({ kind: 'not_found' }, null);
@@ -92,27 +89,36 @@ User.updateById = (user_id, user, result) => {
 User.remove = (user_id, result) => {
     sql.query('DELETE FROM users WHERE user_id = ?', user_id, (err, res) => {
         if (err) {
-        console.log('error: ', err);
-        result(null, err);
-        return;
+            console.log('error: ', err);
+            result(null, err);
+            return;
         }
-
         if (res.affectedRows == 0) {
-        // User ID found
-        result({ kind: 'not_found' }, null);
-        return;
+            // User ID found
+            result({ kind: 'not_found' }, null);
+            return;
         }
-
         console.log('Successfully deleted user with id: ', user_id);
         result(null, res);
     });
 };
 
-// module.exports = {
-//     firstName: 'Maddy',
-//     lastName: 'Behnken',
-//     email: 'maddy@gmail.com',
-//     password: '1234'
-// };
+User.updatePassword = (user, result) => {
+    console.log(user);
+    sql.query('UPDATE users SET password = ? WHERE user_id = ?',[user.password, user.user_id], (err, res) => {
+        if (err) {
+            console.log('error: ', err);
+            result(null, err);
+            return;
+        }
+        if (res.affectedRows == 0) {
+            // User ID not found
+            result({ kind: 'not_found' }, null);
+            return;
+        }
+        console.log('updated user: ', { user_id: user.user_id, ...user });
+        result(null, { user_id: user.user_id, ...user });
+    });
+};
 
 module.exports = User;
