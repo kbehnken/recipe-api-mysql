@@ -2,6 +2,7 @@ const Ingredient = require("../models/ingredientModel.js");
 
 // Create and save a new ingredient
 exports.create = (req, res) => {
+  const recipe_id = req.params.recipeId
   // Validate request
   if (!req.body) {
     res.status(400).send({
@@ -11,8 +12,9 @@ exports.create = (req, res) => {
 
   // Create an ingredient
   const ingredient = new Ingredient({
-    name: req.body.ingredient_name,
-    active: req.body.active
+    ingredient_name: req.body.ingredient_name,
+    quantity: req.body.quantity,
+    recipe_id: recipe_id
   });
 
   // Save ingredient in the database
@@ -42,6 +44,23 @@ exports.update = (req, res) => {
 };
 
 // Delete an ingredient with the specified ingredientId in the request
-exports.delete = (req, res) => {
-  
+exports.deleteIngredient = (req, res) => {
+    const ingredient_id = req.params.ingredientId;
+    Ingredient.removeIngredient(ingredient_id, (err) => {
+      if (err) {
+        if (err.kind === 'not_found') {
+          res.status(404).send({ 
+            message: `Ingredient with id ${ingredient_id} not found.`
+          });
+        } else {
+          res.status(500).send({ 
+            message: `Cannot delete ingredient with id ${ingredient_id}.`
+          });
+        }
+      } else {
+        res.status(200).send({ 
+          message: `Ingredient was successfully deleted.`
+        });
+      }
+    });
 };
