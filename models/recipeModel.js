@@ -5,7 +5,6 @@ const Recipe = function(recipe) {
   this.recipe_id = recipe.recipe_id;
   this.user_id = recipe.user_id;
   this.recipe_name = recipe.recipe_name;
-  this.contributor = recipe.contributor;
   this.photo_url = recipe.photo_url;
   this.prep_time = recipe.prep_time;
   this.cook_time = recipe.cook_time;
@@ -13,31 +12,44 @@ const Recipe = function(recipe) {
   this.directions = recipe.directions;
 };
 
-Recipe.create = (newRecipe, result) => {
-  sql.query(`INSERT INTO recipes (user_id, recipe_name, photo_url, prep_time, cook_time, directions, created_at) VALUES ('${newRecipe.user_id}', '${newRecipe.recipe_name}', '${newRecipe.photo_url}', '${newRecipe.prep_time}', '${newRecipe.cook_time}', '${newRecipe.directions}', Now())`, newRecipe, (err, res) => {
-    if (err) {
-      console.log('error: ', err);
-      result(err, null);
-      return;
-    }
-    newRecipe.recipe_id = res.insertId
-    result(null,newRecipe);
-  });
+Recipe.create = (newRecipe) => {
+  const statement = sql.format(`INSERT INTO recipes (user_id, recipe_name, photo_url, prep_time, cook_time, directions, created_at) VALUES ('${newRecipe.user_id}', '${newRecipe.recipe_name}', '${newRecipe.photo_url}', '${newRecipe.prep_time}', '${newRecipe.cook_time}', '${newRecipe.directions}', Now())`);
+
+  return sql.promise().beginTransaction()
+  .then(() => {
+    return sql.promise().query(statement);
+  })
+  .then((result) => {
+    const mappedIngredients = newRecipe.ingredients.map(item => [item.quantity, item.ingredient_name, result[0].insertId]);
+
+    return sql.promise().query('INSERT INTO ingredients (quantity, ingredient_name, recipe_id) VALUES ?', [mappedIngredients]);
+  })
+  .then(() => {
+    return sql.promise().commit();
+  })
+  .catch(async err => {
+    await sql.promise().rollback();
+    throw err
+  })
 };
 
-Recipe.setIngredients = (newRecipe, result) => {
-  for (let i=0; i < newRecipe.ingredients.length; i++) {
-    const { ingredient_name, quantity } = newRecipe.ingredients[i];
-    const { recipe_id } = newRecipe;
-    sql.query(`INSERT INTO ingredients SET ingredient_name = '${ingredient_name}', quantity = '${quantity}', recipe_id = ${recipe_id}`, (err, res) => {
-      if (err) {
-        console.log('error: ', err);
-        result(err, null);
-        return;
-      }
-    });
-  }
-  result(null, newRecipe);
+Recipe.setIngredients = async (ingredients, recipe_id) => {
+  const mappedIngredients = ingredients.map(item => [item.quantity, item.ingredient_name, recipe_id]);
+
+  sql.promise().beginTransaction()
+  .then(async () => {
+    return await sql.promise().query(`DELETE FROM ingredients WHERE recipe_id = ${recipe_id}`)
+  })
+  .then(() => {
+    return sql.promise().query('INSERT INTO ingredients (quantity, ingredient_name, recipe_id) VALUES ?', [mappedIngredients]);
+  })
+  .then(() => {
+    return sql.promise().commit();
+  })
+  .catch(async err => {
+    await sql.promise().rollback();
+    throw err
+  })
 };
 
 Recipe.findAll = result => {
@@ -51,7 +63,6 @@ Recipe.findAll = result => {
       result(null, err);
       return;
     }
-    console.log('recipes: ', res);
     result(null, res);
   });
 };
@@ -74,7 +85,6 @@ Recipe.findByRecipeId = (recipe_id, user_id, result) => {
       return;
     }
     if (res.length) {
-      // console.log('found recipe: ', res);
       result(null, res);
       return;
     }
@@ -90,8 +100,6 @@ Recipe.findByUserId = (user_id, result) => {
       result(null, err);
       return;
     }
-
-    console.log('recipes: ', res);
     result(null, res);
   });
 };
@@ -108,30 +116,17 @@ Recipe.findRecentRecipes = result => {
                 result(null, err);
                 return;
               }
-    console.log('recipes: ', res);
     result(null, res);
   });
 };
 
-Recipe.updateById = (recipe_id, recipe, result) => {
-  sql.query(
-    'UPDATE recipes SET recipe_name = ?, photo_url = ?, prep_time = ?, cook_time = ?, direction = ? WHERE recipe_id = ?',
-    [recipe.recipe_name, recipe.photo_url, recipe.prep_time, recipe.cook_time, recipe.directions, recipe_id],
-    (err, res) => {
-      if (err) {
-        console.log('error: ', err);
-        result(null, err);
-        return;
-      }
-      if (res.affectedRows == 0) {
-        // Recipe ID not found
-        result({ kind: 'not_found' }, null);
-        return;
-      }
-      console.log('updated recipe: ', { recipe_id: recipe_id, ...recipe });
-      result(null, { recipe_id: recipe_id, ...recipe });
-    }
-  );
+Recipe.updateById = (recipe, recipe_id, result) => {
+  return sql.promise().query(
+    'UPDATE recipes SET recipe_name = ?, photo_url = COALESCE(photo_url, ?), prep_time = ?, cook_time = ?, directions = ? WHERE recipe_id = ?',
+    [recipe.recipe_name, recipe.photo_url, recipe.prep_time, recipe.cook_time, recipe.directions, recipe_id])
+  .then(() => {
+    console.log('updated recipe: ', recipe_id );
+  })
 };
 
 Recipe.remove = (recipe_id, result) => {
@@ -163,7 +158,6 @@ Recipe.findSearchResults = (search, result) => {
       result(null, err);
       return;
     }
-    console.log('recipes: ', res);
     result(null, res);
   });
 };
