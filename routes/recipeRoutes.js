@@ -1,6 +1,9 @@
 const recipes = require('../controllers/recipeController.js');
 const multer = require('multer');
-const upload = multer({dest: process.env.PHOTO_PATH});
+const storage = multer.memoryStorage();
+const upload = multer({
+    storage: storage
+});
 
 module.exports = app => {
     // Create a new recipe
@@ -16,7 +19,7 @@ module.exports = app => {
     app.get('/api/v1/recipes-by-author/:userId', recipes.findByUserId);
 
     // Update a recipe with recipeId
-    app.put('/api/v1/recipes/:recipeId', recipes.update);
+    app.put('/api/v1/recipes/:recipeId', upload.single('imageFile'), recipes.update);
 
     // Delete a recipe with recipeId
     app.delete('/api/v1/recipes/:recipeId', recipes.delete);
@@ -24,7 +27,7 @@ module.exports = app => {
     // Return recently added recipes
     app.get('/api/v1/recent-recipes', recipes.findRecentRecipes);
 
-    // Return a single Recipe with recipeId
+    // Return an image with recipeId
     app.get('/api/v1/recipes/photos/:recipeId', recipes.findPhoto);
 
     // Return search results
