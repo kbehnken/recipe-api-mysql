@@ -1,8 +1,14 @@
 const Recipe = require('../models/recipeModel.js');
+const fs = require('fs');
 const path = require('path');
+const fileType = require('file-type');
+const isAllowedFileType = require('../helpers/isAllowedFileType.js');
+const handleFileUpload = require('../helpers/handleFileUpload');
+const { fstat } = require('fs');
+const { nextTick } = require('process');
 
 // Create and save a new recipe
-exports.create = (req, res) => {
+exports.create = async (req, res) => {
   // Validate request
   if (!req.body) {
     res.status(400).send({
@@ -13,22 +19,22 @@ exports.create = (req, res) => {
   const recipe = new Recipe({
       user_id: req.user.user_id,
       recipe_name: req.body.recipe_name,
-      // photo_url: req.file.filename || '',
       prep_time: req.body.prep_time,
       cook_time: req.body.cook_time,
       ingredients: req.body.ingredients,
       directions: req.body.directions
   });
   recipe.ingredients = JSON.parse(req.body.ingredients)
-  if (req.file) {
-    recipe.photo_url = req.file.filename;
-  } else {
-    recipe.photo_url = null;
+  if (req.file && await isAllowedFileType(req.file.buffer) !== true) {
+    return res.status(415).send();
   }
   // Save recipe in the database
   return Recipe.create(recipe)
-  .then((results) => {
-    console.log('Created recipe: ' + results[0].insertId);
+  .then((recipe_id) => {
+    console.log('Created recipe: ' + recipe_id);
+    if (req.file) {
+      handleFileUpload(req.file.buffer, recipe_id);
+    }
     res.status(200).send('Success');
   })
   .catch((err) => {
@@ -52,7 +58,7 @@ exports.findAll = (req, res) => {
 
 // Return a single recipe with recipeId
 exports.findOne = (req, res) => {
-  let uniqueIngredients, uniqueTags;
+  let ingredients, uniqueTags;
     Recipe.findByRecipeId(req.params.recipeId, req.user.user_id, (err, data) => {
         if (err) {
           if (err.kind === 'not_found') {
@@ -65,14 +71,15 @@ exports.findOne = (req, res) => {
               });
           }
         } else {
-          let ingredients = data.map(item => {
-            return {
-              ingredient_id: item.ingredient_id,
-              ingredient_name: item.ingredient_name,
-              quantity: item.quantity
+          ingredients = data.map(item => {
+            if (item.ingredient_id) { 
+              return {
+                ingredient_id: item.ingredient_id,
+                ingredient_name: item.ingredient_name,
+                quantity: item.quantity
+              };
             }
-          });
-          uniqueIngredients = Array.from(new Set(ingredients));
+          }).filter(Boolean);
           let tags = data.map(item => {
             return item.tag;
           });
@@ -86,7 +93,7 @@ exports.findOne = (req, res) => {
           photo_url: data[0].photo_url,
           prep_time: data[0].prep_time,
           cook_time: data[0].cook_time,
-          ingredients: uniqueIngredients,
+          ingredients: ingredients,
           directions: data[0].directions,
           tags: uniqueTags,
           is_favorite: data[0].is_favorite
@@ -135,32 +142,33 @@ exports.findRecentRecipes = (req, res) => {
 };
 
 // Return a recipe image
-// TODO Detect file type
-exports.findPhoto = (req, res) => {
-  const user_id = req.user.user_id;
+exports.findPhoto = async (req, res) => {
   const recipe_id = req.params.recipeId;
-  Recipe.findByRecipeId(recipe_id, user_id, (err, data) => {
-    if (err)
-      res.status(500).send({
-        message:
-          err.message || 'An error occurred while attempting to retrieve recipe photo.'
-      });
-    else {
-      const photoPath = path.join(process.env.PHOTO_PATH);
-      const fileName = data[0].photo_url;
-      const options = {
-        root: photoPath,
-        headers: {
-          'content-type': 'image/jpeg'
-        }
+  const fileName = path.join(__dirname, '../', process.env.PHOTO_PATH + '/' + 'recipe-photo-'+recipe_id);
+  if (fs.existsSync(fileName)){
+    const type = await fileType.fromFile(fileName);
+    let contentType = '';
+    switch(type.ext) {
+      case 'jpg':
+      case 'jpeg':
+        contentType = 'image/jpeg';
+        break;
+      case 'png':
+        contentType = 'image/png';
+        break;
+      case 'gif':
+        contentType = 'image/gif';
+        break;
+    }
+    const options = {
+      headers: {
+        'Content-Type': contentType
       }
-      if (fileName) {
-        res.sendFile(fileName, options);
-      } else {
-        res.status(200).send();
-      }
-    };
-  });
+    }
+    res.sendFile(fileName, options);
+  } else {
+    res.status(404).send();
+  }
 };
 
 // Update a recipe with the recipeId specified in the request
@@ -177,7 +185,6 @@ exports.update = (req, res) => {
     recipe_name: req.body.recipe_name,
     prep_time: req.body.prep_time,
     cook_time: req.body.cook_time,
-    // ingredients: req.body.ingredients,
     directions: req.body.directions
   });
   recipe.ingredients = JSON.parse(req.body.ingredients)
@@ -191,7 +198,7 @@ exports.update = (req, res) => {
     return Recipe.setIngredients(recipe.ingredients, req.params.recipeId)
   })
   .then(() => {
-    res.status(200).send('Success.')
+    res.status(200).send()
   })
   .catch(err => {
     console.log(err);

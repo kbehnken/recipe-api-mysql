@@ -13,19 +13,23 @@ const Recipe = function(recipe) {
 };
 
 Recipe.create = (newRecipe) => {
-  const statement = sql.format(`INSERT INTO recipes (user_id, recipe_name, photo_url, prep_time, cook_time, directions, created_at) VALUES ('${newRecipe.user_id}', '${newRecipe.recipe_name}', '${newRecipe.photo_url}', '${newRecipe.prep_time}', '${newRecipe.cook_time}', '${newRecipe.directions}', Now())`);
+  const statement = sql.format(`INSERT INTO recipes (user_id, recipe_name, prep_time, cook_time, directions, created_at) VALUES ('${newRecipe.user_id}', '${newRecipe.recipe_name}', '${newRecipe.prep_time}', '${newRecipe.cook_time}', '${newRecipe.directions}', Now())`);
 
   return sql.promise().beginTransaction()
   .then(() => {
     return sql.promise().query(statement);
   })
   .then((result) => {
-    const mappedIngredients = newRecipe.ingredients.map(item => [item.quantity, item.ingredient_name, result[0].insertId]);
+    if (newRecipe.ingredients.length){
+      const mappedIngredients = newRecipe.ingredients.map(item => [item.quantity, item.ingredient_name, result[0].insertId]);
 
-    return sql.promise().query('INSERT INTO ingredients (quantity, ingredient_name, recipe_id) VALUES ?', [mappedIngredients]);
+      return sql.promise().query('INSERT INTO ingredients (quantity, ingredient_name, recipe_id) VALUES ?', [mappedIngredients]);
+    }
+    return result[0].insertId;
   })
-  .then(() => {
-    return sql.promise().commit();
+  .then(async recipe_id => {
+    await sql.promise().commit()
+    return recipe_id;
   })
   .catch(async err => {
     await sql.promise().rollback();
@@ -41,7 +45,9 @@ Recipe.setIngredients = async (ingredients, recipe_id) => {
     return await sql.promise().query(`DELETE FROM ingredients WHERE recipe_id = ${recipe_id}`)
   })
   .then(() => {
-    return sql.promise().query('INSERT INTO ingredients (quantity, ingredient_name, recipe_id) VALUES ?', [mappedIngredients]);
+    if (mappedIngredients.length) {
+      return sql.promise().query('INSERT INTO ingredients (quantity, ingredient_name, recipe_id) VALUES ?', [mappedIngredients]);
+    }
   })
   .then(() => {
     return sql.promise().commit();
