@@ -34,7 +34,6 @@ exports.findFavoritesByUserId = (req, res) => {
                 message: `An error occurred while attempting to retrieve favorite recipe with user id ${req.params.userId}.`
             });
         } 
-        console.log(data);
         res.status(200).send(data);
     });
 };

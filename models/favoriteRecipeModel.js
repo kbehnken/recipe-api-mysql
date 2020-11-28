@@ -33,7 +33,6 @@ Favorite.findFavoritesByUserId = (user_id, result) => {
         result(null, err);
         return;
       }
-      console.log('recipes: ', res);
       result(null, res);
     });
 };
