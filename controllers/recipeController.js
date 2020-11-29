@@ -90,7 +90,6 @@ exports.findOne = (req, res) => {
           user_id: data[0].user_id,
           recipe_name: data[0].recipe_name,
           contributor: data[0].contributor,
-          photo_url: data[0].photo_url,
           prep_time: data[0].prep_time,
           cook_time: data[0].cook_time,
           ingredients: ingredients,
@@ -188,11 +187,6 @@ exports.update = (req, res) => {
     directions: req.body.directions
   });
   recipe.ingredients = JSON.parse(req.body.ingredients)
-  if (req.file) {
-    recipe.photo_url = req.file.filename;
-  } else {
-    recipe.photo_url = null;
-  }
   Recipe.updateById(recipe, req.params.recipeId)
   .then(() => {
     return Recipe.setIngredients(recipe.ingredients, req.params.recipeId)
