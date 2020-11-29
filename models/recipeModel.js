@@ -5,7 +5,6 @@ const Recipe = function(recipe) {
   this.recipe_id = recipe.recipe_id;
   this.user_id = recipe.user_id;
   this.recipe_name = recipe.recipe_name;
-  this.photo_url = recipe.photo_url;
   this.prep_time = recipe.prep_time;
   this.cook_time = recipe.cook_time;
   this.ingredients = recipe.ingredients;
@@ -59,7 +58,7 @@ Recipe.setIngredients = async (ingredients, recipe_id) => {
 };
 
 Recipe.findAll = result => {
-  sql.query(`SELECT r.recipe_id, r.recipe_name, r.user_id, Concat(u.first_name, ' ', u.last_name) AS contributor, r.photo_url, r.prep_time, r.cook_time
+  sql.query(`SELECT r.recipe_id, r.recipe_name, r.user_id, Concat(u.first_name, ' ', u.last_name) AS contributor, r.prep_time, r.cook_time
   FROM recipes AS r           
   LEFT JOIN
     users as u
@@ -74,7 +73,7 @@ Recipe.findAll = result => {
 };
 
 Recipe.findByRecipeId = (recipe_id, user_id, result) => {
-  sql.query(`SELECT r.recipe_id, r.recipe_name, r.user_id, Concat(u.first_name, ' ', u.last_name) AS contributor, r.photo_url, r.prep_time, r. cook_time, r. directions, i.ingredient_id, i.ingredient_name, i.quantity, (CASE WHEN EXISTS(SELECT 1 FROM favorites_to_users WHERE user_id = ${user_id} AND recipe_id = ${recipe_id})
+  sql.query(`SELECT r.recipe_id, r.recipe_name, r.user_id, Concat(u.first_name, ' ', u.last_name) AS contributor, r.prep_time, r. cook_time, r. directions, i.ingredient_id, i.ingredient_name, i.quantity, (CASE WHEN EXISTS(SELECT 1 FROM favorites_to_users WHERE user_id = ${user_id} AND recipe_id = ${recipe_id})
                 THEN true ELSE false
                 END) AS is_favorite
                 FROM recipes AS r           
@@ -111,7 +110,7 @@ Recipe.findByUserId = (user_id, result) => {
 };
 
 Recipe.findRecentRecipes = result => {
-  sql.query(`SELECT r.recipe_id, r.recipe_name, r.user_id, Concat(u.first_name, ' ', u.last_name) AS contributor, r.photo_url, r.prep_time, r.cook_time 
+  sql.query(`SELECT r.recipe_id, r.recipe_name, r.user_id, Concat(u.first_name, ' ', u.last_name) AS contributor, r.prep_time, r.cook_time 
             FROM recipes AS r
             LEFT JOIN
               users as u
@@ -128,8 +127,8 @@ Recipe.findRecentRecipes = result => {
 
 Recipe.updateById = (recipe, recipe_id, result) => {
   return sql.promise().query(
-    'UPDATE recipes SET recipe_name = ?, photo_url = COALESCE(photo_url, ?), prep_time = ?, cook_time = ?, directions = ? WHERE recipe_id = ?',
-    [recipe.recipe_name, recipe.photo_url, recipe.prep_time, recipe.cook_time, recipe.directions, recipe_id])
+    'UPDATE recipes SET recipe_name = ?, prep_time = ?, cook_time = ?, directions = ? WHERE recipe_id = ?',
+    [recipe.recipe_name, recipe.prep_time, recipe.cook_time, recipe.directions, recipe_id])
   .then(() => {
     console.log('updated recipe: ', recipe_id );
   })
@@ -153,7 +152,7 @@ Recipe.remove = (recipe_id, result) => {
 };
 
 Recipe.findSearchResults = (search, result) => {
-  sql.query(`SELECT r.recipe_id, r.recipe_name, r.user_id, Concat(u.first_name, ' ', u.last_name) AS contributor, r.photo_url, r.prep_time, r.cook_time
+  sql.query(`SELECT r.recipe_id, r.recipe_name, r.user_id, Concat(u.first_name, ' ', u.last_name) AS contributor, r.prep_time, r.cook_time
   FROM recipes AS r           
   LEFT JOIN
     users as u

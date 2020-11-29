@@ -19,7 +19,7 @@ Favorite.createFavoriteRecipe = (newFavorite, result) => {
   };
 
 Favorite.findFavoritesByUserId = (user_id, result) => {
-    sql.query(`SELECT r.recipe_id, r.recipe_name, r.user_id, Concat(u.first_name, ' ', u.last_name) AS contributor, r.photo_url, r.prep_time, r.cook_time
+    sql.query(`SELECT r.recipe_id, r.recipe_name, r.user_id, Concat(u.first_name, ' ', u.last_name) AS contributor, r.prep_time, r.cook_time
               FROM recipes AS r           
               LEFT JOIN 
                 favorites_to_users AS f_to_u 

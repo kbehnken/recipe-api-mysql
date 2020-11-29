@@ -6,7 +6,6 @@ CREATE TABLE IF NOT EXISTS recipes (
   FOREIGN KEY (user_id)
     REFERENCES users(user_id),
   recipe_name varchar(40) NOT NULL,
-  photo_url varchar(255),
   prep_time varchar(40),
   cook_time varchar(40),
   directions text,
