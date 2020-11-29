@@ -18,11 +18,12 @@ Recipe.create = (newRecipe) => {
   .then(() => {
     return sql.promise().query(statement);
   })
-  .then((result) => {
+  .then(async (result) => {
     if (newRecipe.ingredients.length){
       const mappedIngredients = newRecipe.ingredients.map(item => [item.quantity, item.ingredient_name, result[0].insertId]);
 
-      return sql.promise().query('INSERT INTO ingredients (quantity, ingredient_name, recipe_id) VALUES ?', [mappedIngredients]);
+      await sql.promise().query('INSERT INTO ingredients (quantity, ingredient_name, recipe_id) VALUES ?', [mappedIngredients]);
+      return result[0].insertId;
     }
     return result[0].insertId;
   })
