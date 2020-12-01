@@ -4,8 +4,6 @@ const path = require('path');
 const fileType = require('file-type');
 const isAllowedFileType = require('../helpers/isAllowedFileType.js');
 const handleFileUpload = require('../helpers/handleFileUpload');
-const { fstat } = require('fs');
-const { nextTick } = require('process');
 
 // Create and save a new recipe
 exports.create = async (req, res) => {
@@ -171,7 +169,7 @@ exports.findPhoto = async (req, res) => {
 };
 
 // Update a recipe with the recipeId specified in the request
-exports.update = (req, res) => {
+exports.update = async (req, res) => {
   // Validate request
   if (!req.body) {
     res.status(400).send({
@@ -187,11 +185,17 @@ exports.update = (req, res) => {
     directions: req.body.directions
   });
   recipe.ingredients = JSON.parse(req.body.ingredients)
+  if (req.file && await isAllowedFileType(req.file.buffer) !== true) {
+    return res.status(415).send();
+  }
   Recipe.updateById(recipe, req.params.recipeId)
   .then(() => {
     return Recipe.setIngredients(recipe.ingredients, req.params.recipeId)
   })
   .then(() => {
+    if (req.file) {
+      handleFileUpload(req.file.buffer, req.params.recipeId);
+    }
     res.status(200).send()
   })
   .catch(err => {
