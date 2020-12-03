@@ -100,7 +100,12 @@ Recipe.findByRecipeId = (recipe_id, user_id, result) => {
 };
 
 Recipe.findByUserId = (user_id, result) => {
-  sql.query(`SELECT * FROM recipes WHERE user_id = ${user_id}`, (err, res) => {
+  sql.query(`SELECT r.recipe_id, r.recipe_name, r.user_id, Concat(u.first_name, ' ', u.last_name) AS contributor, r.prep_time, r. cook_time
+                FROM recipes AS r           
+                LEFT JOIN
+                  users AS u
+                  ON u.user_id = r.user_id
+                WHERE r.user_id = ${user_id}`, (err, res) => {
     if (err) {
       console.log('error: ', err);
       result(null, err);
