@@ -114,33 +114,28 @@ exports.delete = (req, res) => {
 };
 
 // Update a user password for the userId specified in the request
-exports.updatePassword = (req, res) => {
+exports.updatePassword = async (req, res) => {
+    const newPassword = bcrypt.hashSync(req.body.newPassword, 10);
+    const oldPassword = req.body.password;
+    const { user_id } = req.user;
+    
     // Validate Request
     if (!req.body) {
         res.status(400).send({
             message: 'Content cannot be empty!'
         });
     }
-    console.log(req.body);
-    const user = new User({
-        first_name: req.user.first_name,
-        last_name: req.user.last_name,
-        email: req.user.email,
-        password: bcrypt.hashSync(req.body.newPassword, 10),
-        is_admin: req.user.is_admin,
-        user_id: req.user.user_id
-    });
-    User.updatePassword(user, (err, data) => {
-        if (err) {
-            if (err.kind === 'not_found') {
-                res.status(404).send({
-                    message: `User with id ${user.user_id} not found.`
-                });
-            } else {
-                res.status(500).send({
-                    message: `An error occurred while attempting change your password.`
-                });
-            }
-        } else res.send(data);
+    if (req.body.newPassword.length < 12) {
+        return res.status(400).send({
+            message: 'Password does not meet minimum length requirement!'
+        });
+    }
+    const [result] = await User.findById(user_id);
+    if (!bcrypt.compareSync(oldPassword, result[0].password)) {
+        return res.status(401).send('Password comparison failed.');
+    }
+    return User.updatePassword(user_id, newPassword)
+    .then(() => {
+        res.status(200).send('Password updated!');
     });
 };

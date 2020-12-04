@@ -40,20 +40,13 @@ User.findByEmail = (email, result) => {
     });
 };
 
-User.findById = (user_id, result) => {
-    sql.query(`SELECT * FROM users WHERE user_id = ${user_id}`, (err, res) => {
-        if (err) {
-            console.log('error: ', err);
-            result(err, null);
-            return;
-        }
-        if (res.length) {
-            console.log('found user: ', res[0]);
-            result(null, res[0]);
-            return;
-        }
-        // User ID not found
-        result({ kind: 'not_found' }, null);
+User.findById = (user_id) => {
+    return sql.promise().query(`SELECT * FROM users WHERE user_id = ${user_id}`)
+    .then(result => {
+        return result;
+    })
+    .catch(err => {
+        console.log(err);
     });
 };
 
@@ -103,21 +96,10 @@ User.remove = (user_id, result) => {
     });
 };
 
-User.updatePassword = (user, result) => {
-    console.log(user);
-    sql.query('UPDATE users SET password = ? WHERE user_id = ?',[user.password, user.user_id], (err, res) => {
-        if (err) {
-            console.log('error: ', err);
-            result(null, err);
-            return;
-        }
-        if (res.affectedRows == 0) {
-            // User ID not found
-            result({ kind: 'not_found' }, null);
-            return;
-        }
-        console.log('updated user: ', { user_id: user.user_id, ...user });
-        result(null, { user_id: user.user_id, ...user });
+User.updatePassword = (user_id, newPassword) => {
+    return sql.promise().query('UPDATE users SET password = ? WHERE user_id = ?',[ newPassword, user_id])
+    .catch(err => {
+        console.log(err);
     });
 };
 
