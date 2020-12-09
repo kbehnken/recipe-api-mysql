@@ -5,9 +5,9 @@ const cors = require('cors');
 const express = require('express');
 const bodyParser = require('body-parser');
 const app = express();
+const port = process.env.SERVER_PORT;
 const accessTokenSecret = process.env.ACCESS_TOKEN_SECRET;
 const expressJwt = require('express-jwt');
-const PORT = 4042;
 
 // Parse requests of content-type: application/json
 app.use(bodyParser.json());
@@ -28,7 +28,7 @@ app.use(expressJwt(jwtOptions)
 
 app.use(cors({origin: '*'}));
 
-app.listen(PORT, () => console.log(`Listening on port ${PORT}`));
+app.listen(port, () => console.log(`Listening on ` + port));
 
 // Routes
 const authRte = require('./routes/authRoutes');
