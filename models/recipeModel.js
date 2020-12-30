@@ -14,47 +14,50 @@ const Recipe = function(recipe) {
 Recipe.create = (newRecipe) => {
   const statement = sql.format(`INSERT INTO recipes (user_id, recipe_name, prep_time, cook_time, directions, created_at) VALUES ('${newRecipe.user_id}', '${newRecipe.recipe_name}', '${newRecipe.prep_time}', '${newRecipe.cook_time}', '${newRecipe.directions}', Now())`);
 
-  return sql.promise().beginTransaction()
-  .then(() => {
-    return sql.promise().query(statement);
-  })
-  .then(async (result) => {
-    if (newRecipe.ingredients.length){
-      const mappedIngredients = newRecipe.ingredients.map(item => [item.quantity, item.ingredient_name, result[0].insertId]);
+  return sql.promise().getConnection()
+  .then((sql) => {
+    sql.query('start transaction')
+    .then(() => {
+      return sql.query(statement);
+    })
+    .then(async (result) => {
+      if (newRecipe.ingredients.length){
+        const mappedIngredients = newRecipe.ingredients.map(item => [item.quantity, item.ingredient_name, result[0].insertId]);
 
-      await sql.promise().query('INSERT INTO ingredients (quantity, ingredient_name, recipe_id) VALUES ?', [mappedIngredients]);
+        await sql.query('INSERT INTO ingredients (quantity, ingredient_name, recipe_id) VALUES ?', [mappedIngredients]);
+        sql.query('commit');
+        return result[0].insertId;
+      }
       return result[0].insertId;
-    }
-    return result[0].insertId;
-  })
-  .then(async recipe_id => {
-    await sql.promise().commit()
-    return recipe_id;
-  })
-  .catch(async err => {
-    await sql.promise().rollback();
-    throw err
+    })
+    .catch(err => {
+      console.log(err);
+      sql.query('rollback');
+      throw err
+    })
   })
 };
 
 Recipe.setIngredients = async (ingredients, recipe_id) => {
   const mappedIngredients = ingredients.map(item => [item.quantity, item.ingredient_name, recipe_id]);
-
-  sql.promise().beginTransaction()
-  .then(async () => {
-    return await sql.promise().query(`DELETE FROM ingredients WHERE recipe_id = ${recipe_id}`)
-  })
-  .then(() => {
-    if (mappedIngredients.length) {
-      return sql.promise().query('INSERT INTO ingredients (quantity, ingredient_name, recipe_id) VALUES ?', [mappedIngredients]);
-    }
-  })
-  .then(() => {
-    return sql.promise().commit();
-  })
-  .catch(async err => {
-    await sql.promise().rollback();
-    throw err
+  sql.promise().getConnection()
+  .then((sql) => {
+    sql.query('start transaction')
+    .then(async () => {
+      await sql.query(`DELETE FROM ingredients WHERE recipe_id = ${recipe_id}`)
+    })
+    .then(() => {
+      if (mappedIngredients.length) {
+        sql.query('INSERT INTO ingredients (quantity, ingredient_name, recipe_id) VALUES ?', [mappedIngredients]);
+      }
+    })
+    .then(() => {
+      sql.query('commit');
+    })
+    .catch(async err => {
+      await sql.query('rollback');
+      throw err
+    })
   })
 };
 
