@@ -1,4 +1,5 @@
 'use strict';
+
 require('dotenv').config();
 
 const cors = require('cors');
@@ -37,5 +38,3 @@ const userRte = require('./routes/userRoutes.js');
 userRte(app);
 const recipeRte = require('./routes/recipeRoutes.js');
 recipeRte(app);
-const favRecipeRte = require('./routes/favoriteRecipeRoutes.js');
-favRecipeRte(app);
