@@ -2,7 +2,7 @@
 
 ## Description
 
-- This server application is the back-end for https://github.com/kbehnken/recipe-api.
+- This server application is the back-end for https://github.com/kbehnken/recipe-api. It was built using the Express library.
 
 ## Prerequisites
 
@@ -16,7 +16,7 @@
 ```
 cat dbConfig/init.sql | mysql -u username -p your_database
 ```
-3. Create a .env file on the root of the project directory:
+3. Create a .env file in the root of the project directory:
 ```
 HOST=localhost
 SERVER_PORT = 4042
