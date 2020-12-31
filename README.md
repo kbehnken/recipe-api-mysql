@@ -12,7 +12,7 @@
 ## Installation
 
 1. Clone this repository with: `git clone https://github.com/kbehnken/recipe-api`.
-2. Initialize the database.
+2. Initialize the database:
 ```
 cat dbConfig/init.sql | mysql -u username -p your_database
 ```
