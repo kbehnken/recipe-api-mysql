@@ -2,7 +2,7 @@
 
 ## Description
 
-- This server application is the back-end for https://github.com/kbehnken/recipe-api. It was built using the Express library.
+- This server application is the back-end for https://github.com/kbehnken/recipe-app-react. It was built using the Express library.
 
 ## Prerequisites
 
